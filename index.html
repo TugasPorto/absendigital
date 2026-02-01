@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenAttendance | Premium Tracking</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --p: #6366f1; --a: #a855f7; --bg: #0f172a;
+            --glass: rgba(255, 255, 255, 0.08);
+            --border: rgba(255, 255, 255, 0.15);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, #0f172a);
+            color: #fff; margin: 0; padding: 40px 20px;
+            min-height: 100vh; display: flex; justify-content: center;
+        }
+
+        .container { width: 100%; max-width: 900px; animation: fadeIn 0.6s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        #notif {
+            position: fixed; top: 25px; left: 50%; transform: translateX(-50%) translateY(-100px);
+            background: rgba(239, 68, 68, 0.9); backdrop-filter: blur(10px);
+            padding: 15px 30px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2);
+            font-weight: 800; transition: 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            z-index: 9999; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        #notif.active { transform: translateX(-50%) translateY(0); }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: var(--glass); backdrop-filter: blur(10px); border: 1px solid var(--border); padding: 20px; border-radius: 20px; text-align: center; }
+        .stat-card h3 { font-size: 11px; color: #94a3b8; text-transform: uppercase; margin: 0 0 5px; letter-spacing: 1px; }
+        .stat-card p { font-size: 28px; font-weight: 800; margin: 0; }
+
+        .main-grid { display: grid; grid-template-columns: 320px 1fr; gap: 25px; }
+        .panel { background: var(--glass); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 28px; padding: 30px; }
+
+        /* FIX: MERAPIKAN FORM INPUT */
+        .field-group { margin-bottom: 20px; width: 100%; }
+        label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #cbd5e1; margin-bottom: 8px; }
+        
+        input, select {
+            width: 100%; 
+            display: block;
+            box-sizing: border-box; /* Memastikan padding tidak merusak lebar */
+            padding: 14px 18px; 
+            background: rgba(0,0,0,0.4); 
+            border: 1px solid var(--border);
+            border-radius: 14px; 
+            color: #fff; 
+            font-family: inherit; 
+            font-size: 15px;
+            font-weight: 700; 
+            outline: none;
+            transition: 0.3s ease;
+        }
+        
+        input:focus { border-color: var(--p); background: rgba(0,0,0,0.6); }
+
+        .btn {
+            width: 100%; padding: 16px; border: none; border-radius: 14px;
+            background: linear-gradient(135deg, var(--p), var(--a));
+            color: #fff; font-weight: 800; cursor: pointer; transition: 0.3s;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            margin-top: 10px;
+        }
+        .btn:hover { transform: scale(1.02); box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3); }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 20px; font-size: 12px; color: #94a3b8; border-bottom: 1px solid var(--border); }
+        td { padding: 18px 20px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 600; }
+
+        .badge { padding: 6px 12px; border-radius: 10px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .status-hadir { background: #10b98133; color: #10b981; }
+        .status-izin { background: #3b82f633; color: #3b82f6; }
+        .status-sakit { background: #f59e0b33; color: #f59e0b; }
+        .status-alpha { background: #ef444433; color: #f87171; }
+
+        @media (max-width: 768px) { .main-grid, .stats-grid { grid-template-columns: 1fr; } .stats-grid { grid-template-columns: repeat(2,1fr); } }
+    </style>
+</head>
+<body>
+
+    <div id="notif"><i data-lucide="alert-circle"></i> MASUKKAN NAMA SISWA!</div>
+
+    <div class="container">
+        <header style="text-align: center; margin-bottom: 40px;">
+            <h1 style="font-size: 32px; font-weight: 800; margin:0;">ABSENSI DIGITAL</h1>
+            <p style="color: #64748b; font-weight: 600;">Sistem Manajemen Absensi</p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card"><h3>Hadir</h3><p id="c-hadir">0</p></div>
+            <div class="stat-card"><h3>Izin</h3><p id="c-izin">0</p></div>
+            <div class="stat-card"><h3>Sakit</h3><p id="c-sakit">0</p></div>
+            <div class="stat-card"><h3>Alpha</h3><p id="c-alpha">0</p></div>
+        </div>
+
+        <div class="main-grid">
+            <div class="panel">
+                <div class="field-group">
+                    <label><i data-lucide="user"></i> NAMA SISWA</label>
+                    <input type="text" id="n" placeholder="Nama lengkap siswa...">
+                </div>
+                
+                <div class="field-group">
+                    <label><i data-lucide="calendar"></i> KETERANGAN</label>
+                    <select id="s">
+                        <option>Hadir</option>
+                        <option>Izin</option>
+                        <option>Sakit</option>
+                        <option>Alpha</option>
+                    </select>
+                </div>
+
+                <button class="btn" onclick="add()">
+                    <i data-lucide="check-circle"></i> SIMPAN DATA
+                </button>
+            </div>
+
+            <div class="panel" style="padding: 0; overflow: hidden;">
+                <table>
+                    <thead>
+                        <tr><th>SISWA</th><th>STATUS</th><th>WAKTU</th></tr>
+                    </thead>
+                    <tbody id="list"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        let db = [];
+
+        function add() {
+            const n = document.getElementById('n'), s = document.getElementById('s').value;
+            if(!n.value.trim()) {
+                const pop = document.getElementById('notif');
+                pop.classList.add('active');
+                setTimeout(() => pop.classList.remove('active'), 2500);
+                return;
+            }
+            db.unshift({n: n.value, s, t: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})});
+            n.value = ""; render();
+        }
+
+        function render() {
+            const l = document.getElementById('list'), c = {Hadir:0, Izin:0, Sakit:0, Alpha:0};
+            l.innerHTML = db.map(i => {
+                c[i.s]++;
+                return `<tr><td>${i.n}</td><td><span class="badge status-${i.s.toLowerCase()}">${i.s}</span></td><td style="color:#64748b; font-size:12px">${i.t}</td></tr>`;
+            }).join('');
+            for(let k in c) document.getElementById('c-'+k.toLowerCase()).innerText = c[k];
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
